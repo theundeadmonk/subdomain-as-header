@@ -1,7 +1,7 @@
 local helpers = require "spec.helpers"
 
 
-local PLUGIN_NAME = "myplugin"
+local PLUGIN_NAME = "subdomain-as-header"
 
 
 for _, strategy in helpers.all_strategies() do if strategy ~= "cassandra" then
@@ -15,7 +15,7 @@ for _, strategy in helpers.all_strategies() do if strategy ~= "cassandra" then
       -- Inject a test route. No need to create a service, there is a default
       -- service which will echo the request.
       local route1 = bp.routes:insert({
-        hosts = { "test1.com" },
+        hosts = { "foo.test1.com" },
       })
       -- add the plugin to test to the route we created
       bp.plugins:insert {
@@ -52,39 +52,20 @@ for _, strategy in helpers.all_strategies() do if strategy ~= "cassandra" then
 
 
     describe("request", function()
-      it("gets a 'hello-world' header", function()
+      it("Sets the subdomain as a header", function()
         local r = client:get("/request", {
           headers = {
-            host = "test1.com"
+            host = "foo.test1.com"
           }
         })
         -- validate that the request succeeded, response status 200
         assert.response(r).has.status(200)
         -- now check the request (as echoed by mockbin) to have the header
-        local header_value = assert.request(r).has.header("hello-world")
+        local header_value = assert.request(r).has.header("X-Subdomain")
         -- validate the value of that header
-        assert.equal("this is on a request", header_value)
+        assert.equal("foo", header_value)
       end)
     end)
-
-
-
-    describe("response", function()
-      it("gets a 'bye-world' header", function()
-        local r = client:get("/request", {
-          headers = {
-            host = "test1.com"
-          }
-        })
-        -- validate that the request succeeded, response status 200
-        assert.response(r).has.status(200)
-        -- now check the response to have the header
-        local header_value = assert.response(r).has.header("bye-world")
-        -- validate the value of that header
-        assert.equal("this is on the response", header_value)
-      end)
-    end)
-
   end)
 
 end end
